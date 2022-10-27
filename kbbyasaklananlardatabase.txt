@@ -1,10 +1,27 @@
 {
   "body": [
     {
-      "UserID": "51803259",
-      "Reason": "Hile açmak",
-      "ModUserID": "51803259"
+      "id": "1",
+      "UserID": "2237697152",
+      "BanStart": "1",
+      "BanTime": "999",
+      "Reason": "Yetkili tarafından oyundan yasaklandınız.",
+      "ModUserID": "1"
     }
   ],
   "itemCount": 1
+}
+
+{
+  "body": [
+    {
+      "id": "2",
+      "UserID": "2",
+      "BanStart": "2",
+      "BanTime": "2",
+      "Reason": "Yetkili tarafından oyundan yasaklandınız.",
+      "ModUserID": "2"
+    }
+  ],
+  "itemCount": 2
 }
